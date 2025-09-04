@@ -1,13 +1,13 @@
-name: Test CurseForge Latest File Link
+name: Fetch Latest ATM10 Sky Server Pack Link
 
 on:
-  workflow_dispatch:   # ✅ Enables manual run from Actions tab
+  workflow_dispatch:   # ✅ Manual run from Actions tab
   push:
     branches:
-      - curseforge-test  # Runs automatically on pushes to this branch
+      - curseforge-test
 
 jobs:
-  get-latest-file:
+  get-server-pack:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
@@ -16,24 +16,30 @@ jobs:
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Fetch latest file link
+      - name: Fetch latest server pack link
         env:
           API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
           PROJECT_ID: 1298402
         run: |
-          echo "🔍 Fetching all files for project $PROJECT_ID..."
-          response=$(curl -s -H "x-api-key: $API_KEY" \
-            "https://api.curseforge.com/v1/mods/${PROJECT_ID}/files")
+          echo "🔍 Getting latest main file ID..."
+          main_file_id=$(curl -s -H "x-api-key: $API_KEY" \
+            "https://api.curseforge.com/v1/mods/${PROJECT_ID}/files" \
+            | jq '.data[0].id')
 
-          echo "📄 All files from CurseForge:"
+          echo "Latest main file ID: $main_file_id"
+
+          echo "📂 Fetching additional files for that release..."
+          response=$(curl -s -H "x-api-key: $API_KEY" \
+            "https://api.curseforge.com/v1/mods/${PROJECT_ID}/files/${main_file_id}/additional-files")
+
+          echo "📄 Additional files:"
           echo "$response" | jq -r '.data[] | "\(.id) \(.fileName)"'
 
-          # Get the newest file (first in the list)
           FILE_ID=$(echo "$response" | jq '.data[0].id')
           FILENAME=$(echo "$response" | jq -r '.data[0].fileName')
 
           if [ -z "$FILE_ID" ] || [ -z "$FILENAME" ]; then
-            echo "❌ No file found."
+            echo "❌ No server pack found."
             exit 1
           fi
 
@@ -41,5 +47,14 @@ jobs:
           SECOND_PART=${FILE_ID: -3}
           DIRECT_URL="https://mediafilez.forgecdn.net/files/${FIRST_PART}/${SECOND_PART}/${FILENAME}"
 
-          echo "✅ Latest build direct link:"
+          echo "✅ Latest server pack direct link:"
           echo "$DIRECT_URL"
+
+          # Save link to file for artifact
+          echo "$DIRECT_URL" > latest_server_pack_link.txt
+
+      - name: Upload server pack link as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: latest-server-pack-link
+          path: latest_server_pack_link.txt
