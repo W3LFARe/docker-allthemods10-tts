@@ -44,13 +44,13 @@ jobs:
             echo "⚠️ No server pack in API additional-files — scraping HTML..."
             html=$(curl -s "https://www.curseforge.com/minecraft/modpacks/all-the-mods-10-sky/files/${main_file_id}/additional-files")
 
-            # Extract first file link from HTML that isn't the main file
-            server_file_id=$(echo "$html" | htmlq --attribute href 'a[href*="/files/"]' \
-              | grep '/files/' \
+            # Extract first numeric file ID link from HTML that isn't the main file
+            server_file_id=$(echo "$html" \
+              | htmlq --attribute href 'a[href^="/minecraft/modpacks/all-the-mods-10-sky/files/"]' \
+              | grep '/files/[0-9]\+$' \
               | grep -v "${main_file_id}" \
-              | head -n 1 \
-              | awk -F'/files/' '{print $2}' \
-              | cut -d'/' -f1)
+              | sed 's#.*/files/##' \
+              | head -n 1)
 
             if [ -z "$server_file_id" ]; then
               echo "❌ Could not find server pack file ID in HTML."
