@@ -1,10 +1,10 @@
 name: Test CurseForge Server Link
 
 on:
-  workflow_dispatch:   # allows manual run
+  workflow_dispatch:   # Allows manual run from the Actions tab
   push:
     branches:
-      - curseforge-test  # now runs only on this branch
+      - curseforge-test  # Runs automatically on pushes to this branch
 
 jobs:
   get-server-link:
