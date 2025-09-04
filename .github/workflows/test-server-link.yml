@@ -1,0 +1,41 @@
+name: Test CurseForge Server Link
+
+on:
+  workflow_dispatch:   # allows manual run
+  push:
+    branches:
+      - curseforge-test  # now runs only on this branch
+
+jobs:
+  get-server-link:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Fetch latest server build link
+        env:
+          API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
+          PROJECT_ID: 1298402
+        run: |
+          echo "Fetching latest server build for project $PROJECT_ID..."
+          response=$(curl -s -H "x-api-key: $API_KEY" \
+            "https://api.curseforge.com/v1/mods/${PROJECT_ID}/files")
+
+          FILE_ID=$(echo "$response" | jq '.data[] | select(.fileName | test("server-"; "i")) | .id' | head -n 1)
+          FILENAME=$(echo "$response" | jq -r '.data[] | select(.fileName | test("server-"; "i")) | .fileName' | head -n 1)
+
+          if [ -z "$FILE_ID" ] || [ -z "$FILENAME" ]; then
+            echo "❌ No server build found."
+            exit 1
+          fi
+
+          FIRST_PART=${FILE_ID:0:4}
+          SECOND_PART=${FILE_ID: -3}
+          DIRECT_URL="https://mediafilez.forgecdn.net/files/${FIRST_PART}/${SECOND_PART}/${FILENAME}"
+
+          echo "✅ Latest server build direct link:"
+          echo "$DIRECT_URL"
