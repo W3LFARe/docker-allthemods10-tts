@@ -17,7 +17,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y jq curl
-          curl -L https://github.com/mgdm/htmlq/releases/download/v0.4.0/htmlq-x86_64-linux -o htmlq
+          curl -L https://github.com/mgdm/htmlq/releases/download/v0.4.0/htmlq -o htmlq
           sudo mv htmlq /usr/local/bin/
           sudo chmod +x /usr/local/bin/htmlq
 
