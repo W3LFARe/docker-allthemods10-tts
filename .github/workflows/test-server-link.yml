@@ -1,7 +1,7 @@
 name: Test CurseForge Server Link
 
 on:
-  workflow_dispatch:   # Allows manual run from the Actions tab
+  workflow_dispatch:   # ✅ Allows manual run from the Actions tab
   push:
     branches:
       - curseforge-test  # Runs automatically on pushes to this branch
@@ -21,9 +21,12 @@ jobs:
           API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
           PROJECT_ID: 1298402
         run: |
-          echo "Fetching latest server build for project $PROJECT_ID..."
+          echo "Fetching latest files for project $PROJECT_ID..."
           response=$(curl -s -H "x-api-key: $API_KEY" \
             "https://api.curseforge.com/v1/mods/${PROJECT_ID}/files")
+
+          echo "📄 Available files from CurseForge:"
+          echo "$response" | jq -r '.data[].fileName'
 
           FILE_ID=$(echo "$response" | jq '.data[] | select(.fileName | test("server-"; "i")) | .id' | head -n 1)
           FILENAME=$(echo "$response" | jq -r '.data[] | select(.fileName | test("server-"; "i")) | .fileName' | head -n 1)
