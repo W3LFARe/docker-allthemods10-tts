@@ -1,4 +1,4 @@
-name: Fetch Latest ATM10 Sky Server Pack Link (with HTML Fallback)
+name: Fetch Latest ATM10 Sky Server Pack Link (with HTML Fallback + Debug Install)
 
 on:
   workflow_dispatch:
@@ -13,13 +13,23 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Install jq and htmlq (manual binary install)
+      - name: Install jq and htmlq (debug)
         run: |
           sudo apt-get update
           sudo apt-get install -y jq curl
-          curl -L https://github.com/mgdm/htmlq/releases/download/0.4.0/htmlq-x86_64-linux -o htmlq
+          # Download file with verbose output so we can see redirects or errors
+          curl -L -v https://github.com/mgdm/htmlq/releases/download/0.4.0/htmlq-x86_64-linux -o htmlq
+          echo "---- FILE TYPE ----"
+          file htmlq
+          echo "---- FIRST 20 LINES ----"
+          head -n 20 htmlq
+          echo "---- FILE DETAILS ----"
+          ls -l htmlq
+          # Make it executable and check version
           sudo mv htmlq /usr/local/bin/
           sudo chmod +x /usr/local/bin/htmlq
+          echo "---- VERSION CHECK ----"
+          /usr/local/bin/htmlq --version || echo "❌ htmlq did not run"
 
       - name: Fetch latest server pack link
         env:
