@@ -13,10 +13,10 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Install jq and pup (HTML parser)
+      - name: Install jq and htmlq
         run: |
           sudo apt-get update
-          sudo apt-get install -y jq pup curl
+          sudo apt-get install -y jq htmlq curl
 
       - name: Fetch latest server pack link
         env:
@@ -41,8 +41,8 @@ jobs:
             echo "⚠️ No server pack in API additional-files — scraping HTML..."
             html=$(curl -s "https://www.curseforge.com/minecraft/modpacks/all-the-mods-10-sky/files/${main_file_id}/additional-files")
 
-            # Extract first file link from the HTML
-            server_file_id=$(echo "$html" | pup 'a[href*="/files/"] attr{href}' \
+            # Extract first file link from the HTML that isn't the main file
+            server_file_id=$(echo "$html" | htmlq --attribute href 'a[href*="/files/"]' \
               | grep '/files/' \
               | grep -v "${main_file_id}" \
               | head -n 1 \
