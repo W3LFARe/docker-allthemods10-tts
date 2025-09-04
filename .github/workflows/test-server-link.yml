@@ -1,7 +1,7 @@
-name: Fetch Latest ATM10 Sky Server Pack Link
+name: Fetch Latest ATM10 Sky Server Pack Link (with HTML Fallback)
 
 on:
-  workflow_dispatch:   # ✅ Manual run from Actions tab
+  workflow_dispatch:
   push:
     branches:
       - curseforge-test
@@ -13,8 +13,10 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
+      - name: Install jq and pup (HTML parser)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq pup curl
 
       - name: Fetch latest server pack link
         env:
@@ -28,15 +30,39 @@ jobs:
 
           echo "Latest main file ID: $main_file_id"
 
-          echo "📂 Fetching additional files for that release..."
+          echo "📂 Trying API additional-files endpoint..."
           response=$(curl -s -H "x-api-key: $API_KEY" \
             "https://api.curseforge.com/v1/mods/${PROJECT_ID}/files/${main_file_id}/additional-files")
 
-          echo "📄 Additional files:"
-          echo "$response" | jq -r '.data[] | "\(.id) \(.fileName)"'
-
           FILE_ID=$(echo "$response" | jq '.data[0].id')
           FILENAME=$(echo "$response" | jq -r '.data[0].fileName')
+
+          if [ -z "$FILE_ID" ] || [ -z "$FILENAME" ]; then
+            echo "⚠️ No server pack in API additional-files — scraping HTML..."
+            html=$(curl -s "https://www.curseforge.com/minecraft/modpacks/all-the-mods-10-sky/files/${main_file_id}/additional-files")
+
+            # Extract first file link from the HTML
+            server_file_id=$(echo "$html" | pup 'a[href*="/files/"] attr{href}' \
+              | grep '/files/' \
+              | grep -v "${main_file_id}" \
+              | head -n 1 \
+              | awk -F'/files/' '{print $2}' \
+              | cut -d'/' -f1)
+
+            if [ -z "$server_file_id" ]; then
+              echo "❌ Could not find server pack file ID in HTML."
+              exit 1
+            fi
+
+            echo "Found server pack file ID: $server_file_id"
+
+            # Get filename from API
+            file_info=$(curl -s -H "x-api-key: $API_KEY" \
+              "https://api.curseforge.com/v1/mods/${PROJECT_ID}/files/${server_file_id}")
+
+            FILE_ID=$(echo "$file_info" | jq '.data.id')
+            FILENAME=$(echo "$file_info" | jq -r '.data.fileName')
+          fi
 
           if [ -z "$FILE_ID" ] || [ -z "$FILENAME" ]; then
             echo "❌ No server pack found."
@@ -50,7 +76,6 @@ jobs:
           echo "✅ Latest server pack direct link:"
           echo "$DIRECT_URL"
 
-          # Save link to file for artifact
           echo "$DIRECT_URL" > latest_server_pack_link.txt
 
       - name: Upload server pack link as artifact
