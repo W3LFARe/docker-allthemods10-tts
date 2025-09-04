@@ -1,22 +1,45 @@
-echo "🔍 Fetching all files for project $PROJECT_ID..."
-response=$(curl -s -H "x-api-key: $API_KEY" \
-  "https://api.curseforge.com/v1/mods/${PROJECT_ID}/files")
+name: Test CurseForge Latest File Link
 
-echo "📄 All files from CurseForge:"
-echo "$response" | jq -r '.data[] | "\(.id) \(.fileName)"'
+on:
+  workflow_dispatch:   # ✅ Enables manual run from Actions tab
+  push:
+    branches:
+      - curseforge-test  # Runs automatically on pushes to this branch
 
-# Get the newest file (first in the list)
-FILE_ID=$(echo "$response" | jq '.data[0].id')
-FILENAME=$(echo "$response" | jq -r '.data[0].fileName')
+jobs:
+  get-latest-file:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-if [ -z "$FILE_ID" ] || [ -z "$FILENAME" ]; then
-  echo "❌ No file found."
-  exit 1
-fi
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
 
-FIRST_PART=${FILE_ID:0:4}
-SECOND_PART=${FILE_ID: -3}
-DIRECT_URL="https://mediafilez.forgecdn.net/files/${FIRST_PART}/${SECOND_PART}/${FILENAME}"
+      - name: Fetch latest file link
+        env:
+          API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
+          PROJECT_ID: 1298402
+        run: |
+          echo "🔍 Fetching all files for project $PROJECT_ID..."
+          response=$(curl -s -H "x-api-key: $API_KEY" \
+            "https://api.curseforge.com/v1/mods/${PROJECT_ID}/files")
 
-echo "✅ Latest build direct link:"
-echo "$DIRECT_URL"
+          echo "📄 All files from CurseForge:"
+          echo "$response" | jq -r '.data[] | "\(.id) \(.fileName)"'
+
+          # Get the newest file (first in the list)
+          FILE_ID=$(echo "$response" | jq '.data[0].id')
+          FILENAME=$(echo "$response" | jq -r '.data[0].fileName')
+
+          if [ -z "$FILE_ID" ] || [ -z "$FILENAME" ]; then
+            echo "❌ No file found."
+            exit 1
+          fi
+
+          FIRST_PART=${FILE_ID:0:4}
+          SECOND_PART=${FILE_ID: -3}
+          DIRECT_URL="https://mediafilez.forgecdn.net/files/${FIRST_PART}/${SECOND_PART}/${FILENAME}"
+
+          echo "✅ Latest build direct link:"
+          echo "$DIRECT_URL"
