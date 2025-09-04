@@ -13,10 +13,14 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Install jq and htmlq
+      - name: Install jq and htmlq (manual binary install)
         run: |
           sudo apt-get update
-          sudo apt-get install -y jq htmlq curl
+          sudo apt-get install -y jq curl tar
+          curl -L https://github.com/mgdm/htmlq/releases/download/v0.4.0/htmlq-v0.4.0-x86_64-linux.tar.gz -o htmlq.tar.gz
+          tar -xzf htmlq.tar.gz
+          sudo mv htmlq /usr/local/bin/
+          sudo chmod +x /usr/local/bin/htmlq
 
       - name: Fetch latest server pack link
         env:
@@ -41,7 +45,7 @@ jobs:
             echo "⚠️ No server pack in API additional-files — scraping HTML..."
             html=$(curl -s "https://www.curseforge.com/minecraft/modpacks/all-the-mods-10-sky/files/${main_file_id}/additional-files")
 
-            # Extract first file link from the HTML that isn't the main file
+            # Extract first file link from HTML that isn't the main file
             server_file_id=$(echo "$html" | htmlq --attribute href 'a[href*="/files/"]' \
               | grep '/files/' \
               | grep -v "${main_file_id}" \
