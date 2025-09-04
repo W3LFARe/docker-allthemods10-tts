@@ -1,7 +1,7 @@
 name: Test CurseForge Server Link
 
 on:
-  workflow_dispatch:   # ✅ This enables the "Run workflow" button in the Actions tab
+  workflow_dispatch:   # ✅ Enables manual run from Actions tab
   push:
     branches:
       - curseforge-test  # Runs automatically on pushes to this branch
@@ -16,24 +16,30 @@ jobs:
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Fetch latest server build link
+      - name: Fetch latest server build link from additional files
         env:
           API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
           PROJECT_ID: 1298402
         run: |
-          echo "Fetching latest files for project $PROJECT_ID..."
-          response=$(curl -s -H "x-api-key: $API_KEY" \
-            "https://api.curseforge.com/v1/mods/${PROJECT_ID}/files")
+          echo "🔍 Fetching latest main file for project $PROJECT_ID..."
+          main_file_id=$(curl -s -H "x-api-key: $API_KEY" \
+            "https://api.curseforge.com/v1/mods/${PROJECT_ID}/files" \
+            | jq '.data[0].id')
 
-          echo "📄 Available files from CurseForge:"
+          echo "Latest main file ID: $main_file_id"
+
+          echo "📂 Fetching additional files for main file..."
+          response=$(curl -s -H "x-api-key: $API_KEY" \
+            "https://api.curseforge.com/v1/mods/${PROJECT_ID}/files/${main_file_id}/additional-files")
+
+          echo "📄 Additional files found:"
           echo "$response" | jq -r '.data[].fileName'
 
-          # Filter for server packs anywhere in the list
           FILE_ID=$(echo "$response" | jq '.data[] | select(.fileName | test("server-"; "i")) | .id' | head -n 1)
           FILENAME=$(echo "$response" | jq -r '.data[] | select(.fileName | test("server-"; "i")) | .fileName' | head -n 1)
 
           if [ -z "$FILE_ID" ] || [ -z "$FILENAME" ]; then
-            echo "❌ No server build found."
+            echo "❌ No server build found in additional files."
             exit 1
           fi
 
