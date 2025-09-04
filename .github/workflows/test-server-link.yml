@@ -83,4 +83,6 @@ jobs:
 
       - name: Upload server pack link as artifact
         uses: actions/upload-artifact@v4
-        with
+        with:
+          name: latest-server-pack-link
+          path: latest_server_pack_link.txt
