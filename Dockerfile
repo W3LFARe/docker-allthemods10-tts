@@ -2,7 +2,7 @@
 
 FROM eclipse-temurin:21-jdk
 
-LABEL version="1.5.1b"
+LABEL version="1.6"
 
 
 RUN apt-get update && apt-get install -y curl unzip jq && \
