@@ -1,5 +1,5 @@
 
-# [ATM10 To the Sky-1.7](https://www.curseforge.com/minecraft/modpacks/all-the-mods-10-sky) on Curseforge
+# [ATM10 To the Sky-1.8](https://www.curseforge.com/minecraft/modpacks/all-the-mods-10-sky) on Curseforge
 <!-- toc -->
 
 - [Description](#description)
