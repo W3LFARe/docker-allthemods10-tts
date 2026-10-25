@@ -42,28 +42,29 @@ echo "::group::Boot test (timeout ${TIMEOUT}s, JVM_OPTS=$JVM_OPTS)"
 docker run -d --name "$NAME" -e EULA=true -e JVM_OPTS="$JVM_OPTS" "$IMAGE" >/dev/null || fail "docker run failed"
 start=$SECONDS
 while true; do
-    if docker logs "$NAME" 2>&1 | grep -q 'Done ('; then
+    docker logs "$NAME" > "$LOG" 2>&1 || true
+    if grep -aqE 'Done \([0-9]' "$LOG"; then
         echo "Server is up after $((SECONDS - start))s"
         break
     fi
     if [[ "$(docker inspect -f '{{.State.Running}}' "$NAME")" != "true" ]]; then
-        docker logs "$NAME" 2>&1 | tail -n 40
+        tail -n 40 "$LOG"
         fail "container exited with code $(docker inspect -f '{{.State.ExitCode}}' "$NAME") before the server finished starting"
     fi
     if (( SECONDS - start > TIMEOUT )); then
-        docker logs "$NAME" 2>&1 | tail -n 40
+        tail -n 40 "$LOG"
         fail "server did not reach 'Done (' within ${TIMEOUT}s"
     fi
     sleep 15
-    echo "  ...waiting ($((SECONDS - start))s) $(docker logs "$NAME" 2>&1 | tail -n 1 | cut -c1-150)"
+    echo "  ...waiting ($((SECONDS - start))s) $(tail -n 1 "$LOG" | cut -c1-150)"
 done
-docker logs "$NAME" 2>&1 | grep -E '\[pack\]|Done \(' || true
+grep -aE '\[pack\]|Done \(' "$LOG" || true
 echo "::endgroup::"
 
 echo "::group::Graceful shutdown (docker stop)"
 docker stop -t 120 "$NAME" >/dev/null
-docker logs "$NAME" > "$LOG" 2>&1
-if grep -qiE 'Stopping (the )?server|Saving worlds|All dimensions are saved' "$LOG"; then
+docker logs "$NAME" > "$LOG" 2>&1 || true
+if grep -aqiE 'Stopping (the )?server|Saving worlds|All dimensions are saved' "$LOG"; then
     echo "OK: server shut down cleanly"
 else
     echo "::warning title=Shutdown::no save/stop messages seen after docker stop; check smoke.log"

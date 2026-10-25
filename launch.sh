@@ -34,7 +34,7 @@ if [[ ! -f "$MARKER" ]]; then
     staging=/data/.install-tmp
     rm -rf "$staging" && mkdir -p "$staging"
 
-    if ! curl -fL --retry 3 --retry-delay 5 -o "$staging/server.zip" "$SERVER_URL"; then
+    if ! curl -fsSL --retry 3 --retry-delay 5 -o "$staging/server.zip" "$SERVER_URL"; then
         log "ERROR: failed to download $SERVER_URL"
         rm -rf "$staging"
         exit 9
@@ -61,7 +61,7 @@ if [[ ! -f "$MARKER" ]]; then
     rm -rf "$staging"
 
     installer="neoforge-${NEOFORGE_VERSION}-installer.jar"
-    if ! curl -fL --retry 3 --retry-delay 5 -o "$installer" \
+    if ! curl -fsSL --retry 3 --retry-delay 5 -o "$installer" \
         "https://maven.neoforged.net/releases/net/neoforged/neoforge/${NEOFORGE_VERSION}/${installer}"; then
         log "ERROR: failed to download NeoForge ${NEOFORGE_VERSION}"
         exit 9
