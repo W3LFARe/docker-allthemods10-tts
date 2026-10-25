@@ -298,8 +298,11 @@ def extract_notes(text: str, version: str) -> str:
     return m.group(1).strip() + "\n"
 
 
-def set_readme_version(text: str, version: str) -> str:
-    return MARKER_RE.sub(lambda m: f"{m.group(1)}{version}{m.group(2)}", text)
+def set_readme_version(text: str, version: str, pack_name: str = "") -> str:
+    text = MARKER_RE.sub(lambda m: f"{m.group(1)}{version}{m.group(2)}", text)
+    if pack_name:
+        text = re.sub(rf"({re.escape(pack_name)}[- ])\d+(?:\.\d+)+", rf"\g<1>{version}", text)
+    return text
 
 
 # --------------------------------------------------------------------------- GitHub glue
@@ -429,7 +432,7 @@ def cmd_check(args) -> int:
     if not args.dry_run:
         write_env(updates)
         if README.exists():
-            README.write_text(set_readme_version(README.read_text(), version))
+            README.write_text(set_readme_version(README.read_text(), version, env.get("PACK_NAME", "")))
         base = CHANGELOG.read_text() if CHANGELOG.exists() else "# Changelog\n"
         CHANGELOG.write_text(prepend_changelog(base, section))
     gh_output(changed=True, version=version, neoforge=neo, file_id=sid, previous=env.get("SERVER_VERSION", ""))
@@ -451,7 +454,7 @@ def cmd_restore(args) -> int:
         raise UpdateError(f"{args.old_env} lacks {missing}")
     write_env({k: old[k] for k in MANAGED})
     if README.exists():
-        README.write_text(set_readme_version(README.read_text(), old["SERVER_VERSION"]))
+        README.write_text(set_readme_version(README.read_text(), old["SERVER_VERSION"], old.get("PACK_NAME", "")))
     print(f"Restored pack.env to {old['SERVER_VERSION']} ({old['SERVER_FILE_ID']})")
     return 0
 

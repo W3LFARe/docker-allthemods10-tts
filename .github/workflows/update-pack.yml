@@ -108,8 +108,8 @@ jobs:
             build=true                                   # new version
           elif [[ "$FORCE_BUILD" == "true" && "$DRY_RUN" != "true" ]]; then
             build=true                                   # manual rebuild
-          elif [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
-            build=true                                   # test branch: always exercise the build
+          elif [[ "$HEAD_MSG" == *"[force-build]"* ]]; then
+            build=true                                   # commit requested a rebuild
           fi
           force_fail=false
           if [[ "$HEAD_MSG" == *"[smoke-fail]"* ]]; then force_fail=true; fi
