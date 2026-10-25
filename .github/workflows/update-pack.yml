@@ -55,7 +55,7 @@ jobs:
       build: ${{ steps.decide.outputs.build }}
       force_fail: ${{ steps.decide.outputs.force_fail }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Keep the schedule alive
         if: github.event_name == 'schedule'
@@ -134,7 +134,7 @@ jobs:
     if: needs.check.outputs.staging != '' && needs.release.result == 'success'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ needs.check.outputs.staging }}
           fetch-depth: 0
@@ -196,7 +196,7 @@ jobs:
     if: always() && needs.check.outputs.staging != '' && needs.release.result == 'failure'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ github.ref_name }}
 

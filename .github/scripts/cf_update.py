@@ -86,11 +86,19 @@ def skip_ids(env: dict[str, str]) -> set[int]:
 
 
 # --------------------------------------------------------------------------- HTTP
-def http(url: str, *, method: str = "GET", headers: dict | None = None, retries: int = 3) -> urllib.request.addinfourl:
+def http(
+    url: str,
+    *,
+    method: str = "GET",
+    headers: dict | None = None,
+    data: bytes | None = None,
+    retries: int = 3,
+) -> urllib.request.addinfourl:
     hdrs = {"User-Agent": UA, **(headers or {})}
     for attempt in range(1, retries + 1):
         try:
-            return urllib.request.urlopen(urllib.request.Request(url, method=method, headers=hdrs), timeout=60)
+            req = urllib.request.Request(url, data=data, method=method, headers=hdrs)
+            return urllib.request.urlopen(req, timeout=60)
         except urllib.error.HTTPError as e:
             if e.code < 500 and e.code != 429:
                 raise
@@ -101,15 +109,22 @@ def http(url: str, *, method: str = "GET", headers: dict | None = None, retries:
     raise UpdateError(f"{method} {url} failed after {retries} attempts: {err}")
 
 
-def api(path: str) -> dict:
+def api(path: str, *, body: dict | None = None) -> dict:
     key = os.environ.get("CURSEFORGE_API_KEY", "").strip()
     if not key:
         raise UpdateError("CURSEFORGE_API_KEY is not set")
+    headers = {"x-api-key": key, "Accept": "application/json"}
+    payload = None
+    method = "GET"
+    if body is not None:
+        method = "POST"
+        headers["Content-Type"] = "application/json"
+        payload = json.dumps(body).encode("utf-8")
     try:
-        with http(API + path, headers={"x-api-key": key, "Accept": "application/json"}) as r:
+        with http(API + path, method=method, headers=headers, data=payload) as r:
             return json.load(r)
     except urllib.error.HTTPError as e:
-        raise UpdateError(f"CurseForge API {path} -> HTTP {e.code} (bad API key?)") from e
+        raise UpdateError(f"CurseForge API {method} {path} -> HTTP {e.code}") from e
 
 
 def url_ok(url: str) -> bool:
@@ -304,25 +319,61 @@ def gh_summary(md: str) -> None:
 
 
 # --------------------------------------------------------------------------- commands
+def _is_server_candidate(f: dict, main_id: int, pid: int) -> bool:
+    if int(f.get("modId") or 0) != pid or int(f.get("id") or 0) == main_id:
+        return False
+    if int(f.get("parentProjectFileId") or 0) == main_id:
+        return True
+    name = (f.get("fileName") or "").lower()
+    return bool(f.get("isServerPack") or "server" in name)
+
+
 def latest_release(env: dict[str, str]) -> tuple[dict, dict]:
-    pid = env["CF_PROJECT_ID"]
+    pid = int(env["CF_PROJECT_ID"])
     mod = api(f"/mods/{pid}")["data"]
     main = api(f"/mods/{pid}/files/{mod['mainFileId']}")["data"]
     if main.get("releaseType") != 1 and env.get("ALLOW_BETA", "false").lower() != "true":
-        # mainFileId is normally the newest *release*; guard anyway.
         releases = [f for f in mod.get("latestFiles", []) if f.get("releaseType") == 1 and not f.get("isServerPack")]
         if not releases:
             raise UpdateError("newest main file is not a release and no release found in latestFiles")
         main = max(releases, key=lambda f: f["fileDate"])
-    sp_id = main.get("serverPackFileId")
-    if not sp_id:
-        extra = api(f"/mods/{pid}/files/{main['id']}/additional-files")["data"]
-        packs = [f for f in extra if f.get("isServerPack")]
-        if not packs:
-            raise UpdateError(f"release {main.get('displayName')} ({main['id']}) has no server pack")
-        sp_id = max(packs, key=lambda f: f["fileDate"])["id"]
-    server = api(f"/mods/{pid}/files/{sp_id}")["data"]
-    return main, server
+
+    main_id = int(main["id"])
+    print(
+        f"Main file: id={main_id} name={main.get('fileName')} "
+        f"serverPackFileId={main.get('serverPackFileId')} alternateFileId={main.get('alternateFileId')}"
+    )
+
+    # Tier 1 & 2: direct link fields on the main File object
+    sp_id = main.get("serverPackFileId") or main.get("alternateFileId")
+    if sp_id:
+        return main, api(f"/mods/{pid}/files/{sp_id}")["data"]
+
+    # Tier 3: check /v1/mods/{pid}/files for a linked child or server pack
+    files = api(f"/mods/{pid}/files?pageSize=50").get("data", [])
+    linked = [f for f in files if int(f.get("parentProjectFileId") or 0) == main_id]
+    if not linked:
+        linked = [f for f in files if _is_server_candidate(f, main_id, pid)]
+    if linked:
+        return main, max(linked, key=lambda f: f["fileDate"])
+
+    # Tier 4: when an author uploads a server pack as an Additional File without
+    # flagging isServerPack, CurseForge assigns it a sequential fileId near
+    # main_id with parentProjectFileId == main_id. Query POST /v1/mods/files
+    # in batches (-250..+10000) to locate it via the official API.
+    probe_ranges = [range(main_id - 250, main_id)] + [
+        range(main_id + offset, main_id + offset + 500) for offset in range(1, 10001, 500)
+    ]
+    for r in probe_ranges:
+        batch_ids = [i for i in r if i > 0 and i != main_id]
+        batch = api("/mods/files", body={"fileIds": batch_ids}).get("data", [])
+        matches = [f for f in batch if _is_server_candidate(f, main_id, pid)]
+        if matches:
+            found = max(matches, key=lambda f: f["fileDate"])
+            print(f"Found server pack via POST /v1/mods/files batch: id={found['id']} name={found.get('fileName')}")
+            return main, found
+
+    raise UpdateError(f"release {main.get('displayName')} ({main_id}) has no server pack yet")
 
 
 def cmd_check(args) -> int:
