@@ -31,12 +31,18 @@ Note: There are no modded Minecraft files shipped in the container; they are all
 
 > **Important:** As the end user, you are responsible for accepting the [Minecraft EULA](https://aka.ms/MinecraftEULA) from Mojang to run their server. By default in the container it is not accepted — the container will exit with code `99` unless you pass `-e EULA=true`.
 
+### Recommended Server RAM (`JVM_OPTS`)
+
+* **Minimum (1–3 players):** 6–8 GB (`-Xms6144m -Xmx8192m`)
+* **Recommended (2–5 players):** 8–10 GB (`-Xms8192m -Xmx10240m`)
+* **Heavy / 5+ players:** 12–16 GB (`-Xms10240m -Xmx16384m`)
+
 ## Options
 
 These environment variables can be set to override their defaults:
 
 * `EULA` `"true"` (**required** — server will not start without this)
-* `JVM_OPTS` `"-Xms2048m -Xmx4096m"`
+* `JVM_OPTS` `"-Xms6144m -Xmx8192m"` (allocate at least 6–8 GB for 1–3 players, 8–10 GB for 2–5 players, or 12–16 GB for 5+ players)
 * `MOTD` `"ATM10 To the Sky Server Powered by Docker"`
 * `ALLOW_FLIGHT` `"true"` or `"false"`
 * `MAX_PLAYERS` `"5"`
