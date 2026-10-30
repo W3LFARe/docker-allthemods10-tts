@@ -5,6 +5,69 @@ New entries are added automatically by [`.github/workflows/update-pack.yml`](.gi
 
 ## Unreleased
 
+## 2.3.1 — 2026-10-30
+
+NeoForge `21.1.250` · [CurseForge file](https://www.curseforge.com/minecraft/modpacks/all-the-mods-10-sky/files/9368148)
+
+### 📦 2.3.1
+
+**Hotfix**: Fixed force gems being obtainable inside sieves
+
+### 📦 2.3.0
+
+#### 📰 General changes and notes
+
+Magical Snow Globe now requires visiting the 3 dimensions instead of 7 biomes. Utilitarian Sound Muffler and Angel Block are removed. Default resource packs and options are set. PT_BR and Turkish quest translations updated.
+
+##### Github Commits
+
+- fix: sync Turkish quest translations (KorayWalker)
+- Magical Snow Globe Overhaul (DivineFinal)
+- Feat: Updated PT_BR Localizations (PrincessStellar)
+- Remove Utilitarian Sound Muffler and Angel Block (DivineFinal)
+- Added default resourcepacks (oly2o6)
+- Update options.txt (oly2o6)
+
+Merged PRs: `#1071` `#1073` `#1074` `#1077` (`oly2o6`).
+
+#### 🛠️ Mods
+
+##### Added (5)
+
+- Default Options (21.1.8)
+- ForceCraft (6.2.8)
+- alltheores-colorized (resource pack)
+- forcecraft - redarted (resource pack)
+- neo vitae - bloodborn (resource pack)
+
+##### Updated (20)
+
+- Ars Ocultas (2.6.1) -> (2.6.2)
+- Easy Villagers (1.21.1-1.1.47) -> (1.21.1-1.1.49)
+- Forbidden Arcanus (2.6.1) -> (2.6.2)
+- Fzzy Config (0.7.7+1.21+neoforge) -> (0.7.7+fix1+1.21+neoforge)
+- GuideME (21.1.19) -> (21.1.20)
+- Little Big Redstone (1.9.12-1.21.1) -> (1.9.13-1.21.1)
+- McJtyLib (1.21-9.0.21) -> (1.21-9.0.22)
+- MezzConfig (0.6.8) -> (0.6.9)
+- Modern Industrialization (2.5.10) -> (2.5.11)
+- ModernFix (5.27.26+mc1.21.1) -> (5.27.27+mc1.21.1)
+- Mystical Agriculture (8.0.28) -> (8.0.29)
+- Neo Vitae (1.1.44) -> (1.1.48)
+- Puzzles Lib (21.1.64) -> (21.1.66)
+- Railcraft Reborn (1.2.13) -> (1.2.14)
+- Sophisticated Backpacks (3.26.13) -> (3.26.15)
+- Sophisticated Core (1.5.16) -> (1.5.18)
+- Sophisticated Item Actions (0.5.17) -> (0.5.18)
+- Sophisticated Storage (1.6.7) -> (1.6.9)
+- Sound Physics Remastered (1.21.1-1.5.1) -> (1.21.1-1.5.2)
+- Tesseract API (1.12.18-1.21.1) -> (1.12.19-1.21.1)
+- Trash Cans (1.1.1) -> (1.1.2)
+
+##### Downgraded (1)
+
+- Just Enough Items (19.69.0.456) -> (19.64.0.455)
+
 ## 2.3.0 — 2026-10-26
 
 NeoForge `21.1.250` · [CurseForge file](https://www.curseforge.com/minecraft/modpacks/all-the-mods-10-sky/files/9335635)
