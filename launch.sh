@@ -84,19 +84,17 @@ if [[ -n "$JVM_OPTS" ]]; then
     done
 fi
 # Set KEY=VALUE in server.properties. Creates the file / the key when missing
-# (first boot of a pack without server.properties) and passes the value through
-# the environment so characters like / & \ in a MOTD can't break the edit.
+# (first boot of a pack without server.properties) and writes the value with
+# printf '%s' so \u00a7, \n, /, & and \ in a MOTD are preserved verbatim on one line.
 set_prop() {
     local key="$1" value="$2" file="server.properties"
     [[ -f "$file" ]] || : > "$file"
-    KEY="$key" VALUE="$value" awk '
-        BEGIN { k = ENVIRON["KEY"]; v = ENVIRON["VALUE"]; done = 0 }
-        index($0, k "=") == 1 { if (!done) print k "=" v; done = 1; next }
-        { print }
-        END { if (!done) print k "=" v }
-    ' "$file" > "$file.tmp" && mv "$file.tmp" "$file"
+    grep -v "^${key}=" "$file" > "$file.tmp" || true
+    printf '%s=%s\n' "$key" "$value" >> "$file.tmp"
+    mv "$file.tmp" "$file"
 }
 
+MOTD="${MOTD:-\u00a7l \u00a72                \u00a7oATM10 \u00a7b\u00a7oTo the Sky \u00a73\u00a7oServer\u00a7r\n                    \u00a76Powered by \u00a74W3LFARe}"
 if [[ -n "$MOTD" ]]; then
     set_prop motd "$MOTD"
 fi
@@ -113,9 +111,34 @@ if [[ -n "$ONLINE_MODE" ]]; then
     set_prop online-mode "$ONLINE_MODE"
 fi
 
-# Initialize whitelist.json if not present
+# Resolve a Minecraft username to "<dashed-uuid> <canonical-name>" via Mojang API
+# (with PlayerDB fallback).
+resolve_player() {
+    local query="$1" resp raw_id name uuid
+    resp=$(curl -fsSL "https://api.mojang.com/users/profiles/minecraft/${query}" 2>/dev/null || true)
+    raw_id=$(printf '%s' "$resp" | jq -r '.id // empty' 2>/dev/null || true)
+    name=$(printf '%s' "$resp" | jq -r '.name // empty' 2>/dev/null || true)
+    if [[ "$raw_id" =~ ^[0-9a-fA-F]{32}$ && -n "$name" ]]; then
+        raw_id="${raw_id,,}"
+        uuid="${raw_id:0:8}-${raw_id:8:4}-${raw_id:12:4}-${raw_id:16:4}-${raw_id:20:12}"
+        printf '%s %s\n' "$uuid" "$name"
+        return 0
+    fi
+    resp=$(curl -fsSL "https://playerdb.co/api/player/minecraft/${query}" 2>/dev/null || true)
+    uuid=$(printf '%s' "$resp" | jq -r '.data.player.id // empty' 2>/dev/null || true)
+    name=$(printf '%s' "$resp" | jq -r '.data.player.username // empty' 2>/dev/null || true)
+    if [[ -n "$uuid" && "$uuid" != "null" && -n "$name" && "$name" != "null" ]]; then
+        printf '%s %s\n' "${uuid,,}" "$name"
+        return 0
+    fi
+    return 1
+}
+
+# Initialize whitelist.json if not present and deduplicate existing entries by UUID
 if [[ ! -f whitelist.json ]]; then
     echo "[]" > whitelist.json
+else
+    jq 'unique_by(.uuid)' whitelist.json > whitelist.tmp.json 2>/dev/null && mv whitelist.tmp.json whitelist.json || true
 fi
 
 IFS=',' read -ra USERS <<< "$WHITELIST_USERS"
@@ -127,22 +150,26 @@ for raw_username in "${USERS[@]}"; do
         continue
     fi
 
-    UUID=$(curl -s "https://playerdb.co/api/player/minecraft/$username" | jq -r '.data.player.id')
-    if [[ -n "$UUID" && "$UUID" != "null" ]]; then
-        if jq -e ".[] | select(.uuid == \"$UUID\" and .name == \"$username\")" whitelist.json > /dev/null; then
-            echo "Whitelist: $username ($UUID) is already whitelisted. Skipping..."
+    if resolved=$(resolve_player "$username"); then
+        UUID="${resolved%% *}"
+        CANONICAL_NAME="${resolved#* }"
+        if jq -e --arg u "$UUID" '.[] | select((.uuid | ascii_downcase) == $u)' whitelist.json > /dev/null; then
+            echo "Whitelist: $CANONICAL_NAME ($UUID) is already whitelisted. Updating canonical name..."
+            jq --arg u "$UUID" --arg n "$CANONICAL_NAME" 'map(if (.uuid | ascii_downcase) == $u then .uuid = $u | .name = $n else . end) | unique_by(.uuid)' whitelist.json > tmp.json && mv tmp.json whitelist.json
         else
-            echo "Whitelist: Adding $username ($UUID) to whitelist."
-            jq ". += [{\"uuid\": \"$UUID\", \"name\": \"$username\"}]" whitelist.json > tmp.json && mv tmp.json whitelist.json
+            echo "Whitelist: Adding $CANONICAL_NAME ($UUID) to whitelist."
+            jq --arg u "$UUID" --arg n "$CANONICAL_NAME" '(. + [{"uuid": $u, "name": $n}]) | unique_by(.uuid)' whitelist.json > tmp.json && mv tmp.json whitelist.json
         fi
     else
         echo "Whitelist: Failed to fetch UUID for $username."
     fi
 done
 
-# Initialize ops.json if not present
+# Initialize ops.json if not present and deduplicate existing entries by UUID
 if [[ ! -f ops.json ]]; then
     echo "[]" > ops.json
+else
+    jq 'unique_by(.uuid)' ops.json > ops.tmp.json 2>/dev/null && mv ops.tmp.json ops.json || true
 fi
 
 IFS=',' read -ra OPS <<< "$OP_USERS"
@@ -154,13 +181,15 @@ for raw_username in "${OPS[@]}"; do
         continue
     fi
 
-    UUID=$(curl -s "https://playerdb.co/api/player/minecraft/$username" | jq -r '.data.player.id')
-    if [[ -n "$UUID" && "$UUID" != "null" ]]; then
-        if jq -e ".[] | select(.uuid == \"$UUID\" and .name == \"$username\")" ops.json > /dev/null; then
-            echo "Ops: $username ($UUID) is already an operator. Skipping..."
+    if resolved=$(resolve_player "$username"); then
+        UUID="${resolved%% *}"
+        CANONICAL_NAME="${resolved#* }"
+        if jq -e --arg u "$UUID" '.[] | select((.uuid | ascii_downcase) == $u)' ops.json > /dev/null; then
+            echo "Ops: $CANONICAL_NAME ($UUID) is already an operator. Updating canonical name..."
+            jq --arg u "$UUID" --arg n "$CANONICAL_NAME" 'map(if (.uuid | ascii_downcase) == $u then .uuid = $u | .name = $n else . end) | unique_by(.uuid)' ops.json > tmp.json && mv tmp.json ops.json
         else
-            echo "Ops: Adding $username ($UUID) as operator."
-            jq ". += [{\"uuid\": \"$UUID\", \"name\": \"$username\", \"level\": 4, \"bypassesPlayerLimit\": false}]" ops.json > tmp.json && mv tmp.json ops.json
+            echo "Ops: Adding $CANONICAL_NAME ($UUID) as operator."
+            jq --arg u "$UUID" --arg n "$CANONICAL_NAME" '(. + [{"uuid": $u, "name": $n, "level": 4, "bypassesPlayerLimit": false}]) | unique_by(.uuid)' ops.json > tmp.json && mv tmp.json ops.json
         fi
     else
         echo "Ops: Failed to fetch UUID for $username."
