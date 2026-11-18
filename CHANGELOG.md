@@ -5,6 +5,99 @@ New entries are added automatically by [`.github/workflows/update-pack.yml`](.gi
 
 ## Unreleased
 
+## 2.4.0 — 2026-11-18
+
+NeoForge `21.1.250` · [CurseForge file](https://www.curseforge.com/minecraft/modpacks/all-the-mods-10-sky/files/9676315)
+
+### Changelog
+
+### 📦 2.4.0
+
+#### 📰 General changes and notes
+
+Environmental Tech is added with alpha quests. Excessive Utilities generators are buffed. Several recipe and quest fixes land (ForceCraft Time Torch and logs, infinite redstone uncrafting, clashing watering cans, Spiky Spikes, Budding GeOre). InvTweaks and KubeJS config fixes, plus a few tags and recipe disables so packs load cleanly.
+
+##### Added (3)
+
+- Environmental Core (3.2.2)
+- Environmental Tech (3.3.2)
+- ValkyrieLib (3.2.2)
+
+##### Github Commits
+
+- Env tech alpha quests (oly2o6)
+- Pin diamond nuggets to Silent Gear shards in Almost Unified, fixes #1100, fixes #1085 (oly2o6)
+- Deprecate Spiky Spikes and point the spike quest at ExU spikes, fixes #1082 (oly2o6)
+- Disable InvTweaks sorting in ExpandedAE terminals, fixes #1106 (oly2o6)
+- Disable the KubeJS local web server by default, fixes #1097 (oly2o6)
+- Correct Budding ATM GeOre quest to 9 blocks, fixes #1081 (oly2o6)
+- Fix Gildede typo in Hephaestus Forge ponder, fixes #1076 (oly2o6)
+- Halve Resonating Redstone Crystal uncrafting to stop infinite redstone, fixes #1105 (oly2o6)
+- Remove Pickle Tweaks Watering Can recipe that clashed with ExU's, fixes #1103 (oly2o6)
+- Stop Force Logs smelting into Charcoal instead of Golden Power Source, fixes #1089 (oly2o6)
+- Disable the ForceCraft Time Torch (oly2o6)
+- Added environmental tech files (oly2o6)
+- Buff excessive utils generators to match the pack (oly2o6)
+- Remove BOM from InvTweaks config that stopped InvTweaks loading (oly2o6)
+- Disable Happy Hallows recipes that need Merrymaking before they're parsed (oly2o6)
+- Fill c:foods/pork so Herbs and Harvest pepperoni and sausage load (oly2o6)
+
+#### 🛠️ Mods
+
+##### Updated (49)
+
+- Aaron (1.21.0) -> (1.23.0)
+- All The Leaks (1.1.13+1.21.1-neoforge) -> (1.1.16+1.21.1-neoforge)
+- Architectury (13.0.11) -> (13.0.12)
+- Ars Nouveau (5.13.3) -> (5.13.5)
+- Balm (21.0.66) -> (21.0.67)
+- Baubley Heart Canisters (1.21.1-1.4.3) -> (1.21.1-1.6.0)
+- Cooking for Blockheads (21.1.24) -> (21.1.25)
+- Create Crafts & Additions (1.6.0) -> (1.7.2)
+- Cyclops Core (1.30.0) -> (1.30.2)
+- Ender IO (8.2.12-beta) -> (8.2.14-beta)
+- Excessive Utilities (1.11.0) -> (1.12.0)
+- Extended Industrialization (1.16.4-1.21.1) -> (1.16.5-1.21.1)
+- FancyMenu (3.9.14) -> (3.10.0)
+- FindMe (3.3.3) -> (3.3.5)
+- GuideME (21.1.20) -> (21.1.22)
+- IntegratedCrafting (1.8.0) -> (1.8.1)
+- IntegratedDynamics (1.38.1) -> (1.39.1)
+- IntegratedTerminals (1.11.1) -> (1.11.2)
+- IntegratedTunnels (1.13.0) -> (1.13.1)
+- Inventory Tweaks Refoxed (1.21.1-1.3.2) -> (1.21.1-1.4.0)
+- Just Enough Stuff (1.21.1-1.3.0) -> (1.21.1-1.4.0)
+- KeyBind Bundles (1.4.0) -> (1.5.0)
+- Kotlin for Forge (5.12.0) -> (5.13.0)
+- Little Big Redstone (1.9.13-1.21.1) -> (1.9.14-1.21.1)
+- LogisticsNetworks (1.17.2) -> (1.18.0)
+- MezzConfig (0.6.9) -> (0.7.1)
+- Modern Industrialization (2.5.11) -> (2.5.13)
+- Modonomicon (1.120.7) -> (1.123.1)
+- Moonlight Lib (1.21.1-3.7.2) -> (1.21.1-3.8.3)
+- Neo Vitae (1.1.48) -> (1.1.53)
+- Not Enough Recipe Book (0.4.3) -> (0.6.2+1.21.1)
+- Occultism (1.224.5) -> (1.227.0)
+- OctoLib (0.6.2) -> (0.6.3.2)
+- Oracle Index (1.4.0) -> (1.4.1)
+- PneumaticCraft: Repressurized (8.2.23) -> (8.2.24)
+- Railcraft Reborn (1.2.14) -> (1.2.17)
+- Reliquary Reincarnations (2.0.81) -> (2.0.85)
+- Retro Factory Manager (1.0.4) -> (1.0.6)
+- RFToolsBuilder (1.21-7.0.7) -> (1.21-7.0.8)
+- RFToolsUtility (1.21-7.0.12) -> (1.21-7.0.13)
+- Sophisticated Backpacks (3.26.15) -> (3.26.21)
+- Sophisticated Core (1.5.18) -> (1.5.38)
+- Sophisticated Item Actions (0.5.18) -> (0.5.19)
+- Sophisticated Storage (1.6.9) -> (1.6.19)
+- SuperMartijn642's Core Lib (1.1.25) -> (1.1.26+a)
+- Tesseract API (1.12.19-1.21.1) -> (1.12.21-1.21.1)
+- Titanium (4.0.43) -> (4.0.56)
+- Valhelsia Core (1.1.5) -> (1.1.6)
+- Waystones (21.1.46) -> (21.1.47)
+
+### Container changes
+
 - Add persistent `/data/custom_mods` (`*.jar` → `mods/`) and `/data/custom_config` (→ `config/`), restored on every boot. Jars removed or renamed in `custom_mods` are cleaned out of `mods/` via a manifest.
 - Add optional `SERVER_PORT` (sets `server-port` and `query.port`; defaults to `25565`).
 - `server.properties` settings are now created when missing and written without `sed`, so a MOTD containing `/`, `&` or `\` no longer breaks startup and settings apply on the very first boot.
